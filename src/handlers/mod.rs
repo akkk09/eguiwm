@@ -3,21 +3,22 @@ mod xdg_shell;
 
 use crate::Eguiwm;
 
-//
-// Wl Seat
-//
-
-use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
-use smithay::input::pointer::Focus;
-use smithay::input::{Seat, SeatHandler, SeatState};
-use smithay::reexports::wayland_server::Resource;
-use smithay::reexports::wayland_server::protocol::wl_surface::WlSurface;
-use smithay::utils::Serial;
-use smithay::wayland::output::OutputHandler;
-use smithay::wayland::pointer_constraints::PointerConstraintsHandler;
-use smithay::wayland::selection::SelectionHandler;
-use smithay::wayland::selection::data_device::{
-    DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler, set_data_device_focus,
+use smithay::{
+    input::{
+        dnd::{DnDGrab, DndGrabHandler, GrabType, Source},
+        pointer::Focus,
+        Seat, SeatHandler, SeatState,
+    },
+    reexports::wayland_server::{protocol::wl_surface::WlSurface, Resource},
+    utils::Serial,
+    wayland::{
+        output::OutputHandler,
+        pointer_constraints::PointerConstraintsHandler,
+        selection::{
+            data_device::{set_data_device_focus, DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler},
+            SelectionHandler,
+        },
+    },
 };
 
 impl SeatHandler for Eguiwm {
@@ -29,18 +30,22 @@ impl SeatHandler for Eguiwm {
         &mut self.seat_state
     }
 
-    fn cursor_image(&mut self, _seat: &Seat<Self>, _image: smithay::input::pointer::CursorImageStatus) {}
+    fn cursor_image(
+        &mut self,
+        _seat: &Seat<Self>,
+        _image: smithay::input::pointer::CursorImageStatus,
+    ) {
+    }
 
     fn focus_changed(&mut self, seat: &Seat<Self>, focused: Option<&WlSurface>) {
         let dh = &self.display_handle;
-        let client = focused.and_then(|s| dh.get_client(s.id()).ok());
+        let client = focused.and_then(|surface| dh.get_client(surface.id()).ok());
         set_data_device_focus(dh, seat, client);
     }
 }
 
 impl PointerConstraintsHandler for Eguiwm {}
 
-// Wl Data Device
 impl SelectionHandler for Eguiwm {
     type SelectionUserData = ();
 }
@@ -64,20 +69,19 @@ impl WaylandDndGrabHandler for Eguiwm {
     ) {
         match type_ {
             GrabType::Pointer => {
-                let ptr = seat.get_pointer().unwrap();
-                let start_data = ptr.grab_start_data().unwrap();
+                let pointer = seat.get_pointer().unwrap();
+                let start_data = pointer.grab_start_data().unwrap();
                 let grab = DnDGrab::new_pointer(&self.display_handle, start_data, source, seat);
-                ptr.set_grab(self, grab, serial, Focus::Keep);
+                pointer.set_grab(self, grab, serial, Focus::Keep);
             }
             GrabType::Touch => {
-                // eguiwm lacks touch handling
+                // eguiwm lacks touch handling.
                 source.cancel();
             }
         }
     }
 }
 
-// Wl Output & Xdg Output
 impl OutputHandler for Eguiwm {}
 
 smithay::delegate_dispatch2!(Eguiwm);
