@@ -22,10 +22,10 @@ Toplevel windows are arranged in a master/stack layout when they appear. The nes
 
 ## Build prerequisites (Arch Linux)
 
-Install Rust and the native development libraries:
+Install Rust, the native libraries, and the libraries needed by the egui panel:
 
 ```sh
-sudo pacman -S --needed rust cargo pkgconf wayland libxkbcommon
+sudo pacman -S --needed rust cargo pkgconf wayland libxkbcommon libxkbcommon-x11
 ```
 
 Depending on the Smithay version and graphics stack, additional system libraries may be needed by its transitive dependencies.
@@ -33,11 +33,11 @@ Depending on the Smithay version and graphics stack, additional system libraries
 ## Build and run
 
 ```sh
-cargo build --release
+cargo build --release --bins
 RUST_LOG=info cargo run --release
 ```
 
-This opens a nested compositor window. It does **not** start a native Wayland session yet.
+This opens a nested compositor window and starts the separate egui taskbar client when the panel binary is present. The panel includes four workspaces, launcher buttons, and basic load/memory information. It does **not** start a native Wayland session yet. Build all binaries first (`cargo build --release --bins`) so `eguiwm-panel` is available next to the compositor executable.
 
 To launch a test client inside the nested compositor:
 
@@ -57,7 +57,9 @@ The initial target is a **2-second startup**, measured from compositor process l
 - [x] Pure layout module with unit tests
 - [ ] Reflow windows when a client closes or the output resizes
 - [ ] Keyboard shortcuts and explicit floating mode
-- [ ] Workspaces and multiple-output support
+- [x] Four basic workspaces with taskbar switching
+- [ ] Multiple-output support
+- [x] Separate egui taskbar with launcher buttons and basic system summary
 - [ ] Damage-driven rendering and idle CPU benchmarks
 - [ ] Native DRM/TTY backend
 - [ ] Separate egui settings app
