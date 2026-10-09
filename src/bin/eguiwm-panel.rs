@@ -7,6 +7,7 @@ const PANEL_HEIGHT: f32 = 42.0;
 struct Panel {
     control_socket: String,
     status: String,
+    active_workspace: usize,
 }
 
 impl Panel {
@@ -26,6 +27,10 @@ impl Panel {
     fn launch(&mut self, command: &str) {
         match Command::new(command)
             .env("WAYLAND_DISPLAY", std::env::var("WAYLAND_DISPLAY").unwrap_or_default())
+            .env("GDK_BACKEND", "wayland")
+            .env("QT_QPA_PLATFORM", "wayland")
+            .env("MOZ_ENABLE_WAYLAND", "1")
+            .env_remove("DISPLAY")
             .spawn()
         {
             Ok(_) => self.status.clear(),
@@ -66,10 +71,15 @@ impl eframe::App for Panel {
                     ui.label(RichText::new("eguiwm").strong().color(Color32::from_rgb(135, 190, 255)));
                     ui.separator();
 
-                    for workspace in 1..=4 {
-                        let label = if workspace == 1 { "● 1" } else { format!("○ {workspace}") };
+                    for workspace in 0..4 {
+                        let label = if workspace == self.active_workspace {
+                            format!("● {}", workspace + 1)
+                        } else {
+                            format!("○ {}", workspace + 1)
+                        };
                         if ui.add_sized(Vec2::new(42.0, 28.0), egui::Button::new(label)).clicked() {
-                            self.send(&format!("workspace:{}", workspace - 1));
+                            self.active_workspace = workspace;
+                            self.send(&format!("workspace:{workspace}"));
                         }
                     }
 
@@ -111,6 +121,10 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "eguiwm-panel",
         options,
-        Box::new(move |_cc| Ok(Box::new(Panel { control_socket, status: String::new() }))),
+        Box::new(move |_cc| Ok(Box::new(Panel {
+            control_socket,
+            status: String::new(),
+            active_workspace: 0,
+        }))),
     )
 }
