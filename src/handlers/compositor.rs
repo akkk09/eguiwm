@@ -49,7 +49,10 @@ impl CompositorHandler for Eguiwm {
                     == Some("eguiwm-panel");
                 if is_panel {
                     for workspace in &mut self.workspaces {
-                        workspace.retain(|candidate| candidate != &window);
+                        workspace.retain(|candidate| {
+                            candidate.toplevel().unwrap().wl_surface()
+                                != window.toplevel().unwrap().wl_surface()
+                        });
                     }
                     if let Some(output) = self.space.outputs().next().cloned() {
                         if let Some(area) = self.space.output_geometry(&output) {
