@@ -33,18 +33,24 @@ impl XdgShellHandler for Eguiwm {
     }
 
     fn new_toplevel(&mut self, surface: ToplevelSurface) {
+        let is_panel = surface.current_state().app_id.as_deref() == Some("eguiwm-panel");
         let window = Window::new_wayland_window(surface);
-        self.space.map_element(window, (0, 0), false);
-        let Some(output) = self.space.outputs().next().cloned() else { return; };
-        let Some(area) = self.space.output_geometry(&output) else { return; };
-        let windows: Vec<_> = self.space.elements().cloned().collect();
-        let rects = layout::tile_rects(area, windows.len());
-        for (window, rect) in windows.iter().zip(rects) {
-            self.space.map_element(window.clone(), rect.loc, true);
+
+        if is_panel {
+            let Some(output) = self.space.outputs().next().cloned() else { return; };
+            let Some(area) = self.space.output_geometry(&output) else { return; };
+            let size = (area.size.w, 42).into();
             let toplevel = window.toplevel().unwrap();
-            toplevel.with_pending_state(|state| { state.size = Some(rect.size); });
+            toplevel.with_pending_state(|state| state.size = Some(size));
             toplevel.send_pending_configure();
+            self.space.map_element(window.clone(), (0, 0), true);
+            self.panel_window = Some(window);
+            return;
         }
+
+        self.workspaces[self.active_workspace].push(window.clone());
+        self.space.map_element(window, (0, 0), false);
+        self.reflow_active_workspace();
     }
 
     fn new_popup(&mut self, surface: PopupSurface, _positioner: PositionerState) {

@@ -36,8 +36,38 @@ impl CompositorHandler for Eguiwm {
                 .space
                 .elements()
                 .find(|w| w.toplevel().unwrap().wl_surface() == &root)
+                .cloned()
             {
-                window.on_commit();
+                // Clients set app_id after creating the toplevel, so identify the panel
+                // again on its first surface commit as well as in new_toplevel().
+                let is_panel = window
+                    .toplevel()
+                    .unwrap()
+                    .current_state()
+                    .app_id
+                    .as_deref()
+                    == Some("eguiwm-panel");
+                if is_panel {
+                    for workspace in &mut self.workspaces {
+                        workspace.retain(|candidate| {
+                            candidate.toplevel().unwrap().wl_surface()
+                                != window.toplevel().unwrap().wl_surface()
+                        });
+                    }
+                    if let Some(output) = self.space.outputs().next().cloned() {
+                        if let Some(area) = self.space.output_geometry(&output) {
+                            let toplevel = window.toplevel().unwrap();
+                            toplevel.with_pending_state(|state| {
+                                state.size = Some((area.size.w, 42).into());
+                            });
+                            toplevel.send_pending_configure();
+                        }
+                    }
+                    self.space.map_element(window.clone(), (0, 0), true);
+                    self.panel_window = Some(window);
+                } else {
+                    window.on_commit();
+                }
             }
         };
 
