@@ -1,0 +1,23 @@
+[package]
+name = "eguiwm"
+version = "0.1.0"
+edition = "2024"
+description = "Experimental speed-first Rust Wayland compositor"
+license = "MIT"
+repository = "https://github.com/akkk09/eguiwm"
+
+[dependencies]
+bitflags = "2.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dependencies.smithay]
+version = "0.7"
+default-features = false
+features = ["backend_winit", "wayland_frontend", "desktop"]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
