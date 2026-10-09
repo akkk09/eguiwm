@@ -4,7 +4,7 @@ mod xdg_shell;
 use crate::Eguiwm;
 
 //
-// Wl Seat
+ // Wl Seat
 //
 
 use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
@@ -17,7 +17,8 @@ use smithay::wayland::output::OutputHandler;
 use smithay::wayland::pointer_constraints::PointerConstraintsHandler;
 use smithay::wayland::selection::SelectionHandler;
 use smithay::wayland::selection::data_device::{
-    DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler, set_data_device_focus,
+    ClientDndGrabHandler, DataDeviceHandler, DataDeviceState, ServerDndGrabHandler,
+    WaylandDndGrabHandler, set_data_device_focus,
 };
 
 impl SeatHandler for Eguiwm {
@@ -40,21 +41,21 @@ impl SeatHandler for Eguiwm {
 
 impl PointerConstraintsHandler for Eguiwm {}
 
-//
 // Wl Data Device
-//
-
 impl SelectionHandler for Eguiwm {
     type SelectionUserData = ();
 }
 
 impl DataDeviceHandler for Eguiwm {
-    fn data_device_state(&mut self) -> &mut DataDeviceState {
-        &mut self.data_device_state
+    fn data_device_state(&self) -> &DataDeviceState {
+        &self.data_device_state
     }
 }
 
 impl DndGrabHandler for Eguiwm {}
+impl ClientDndGrabHandler for Eguiwm {}
+impl ServerDndGrabHandler for Eguiwm {}
+
 impl WaylandDndGrabHandler for Eguiwm {
     fn dnd_requested<S: Source>(
         &mut self,
@@ -68,8 +69,6 @@ impl WaylandDndGrabHandler for Eguiwm {
             GrabType::Pointer => {
                 let ptr = seat.get_pointer().unwrap();
                 let start_data = ptr.grab_start_data().unwrap();
-
-                // create a dnd grab to start the operation
                 let grab = DnDGrab::new_pointer(&self.display_handle, start_data, source, seat);
                 ptr.set_grab(self, grab, serial, Focus::Keep);
             }
@@ -81,10 +80,7 @@ impl WaylandDndGrabHandler for Eguiwm {
     }
 }
 
-//
 // Wl Output & Xdg Output
-//
-
 impl OutputHandler for Eguiwm {}
 
 smithay::delegate_dispatch2!(Eguiwm);
