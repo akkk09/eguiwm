@@ -23,6 +23,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Child clients should connect to this nested compositor, not the host.
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
+    unsafe { std::env::set_var("EGUIWM_CONTROL_SOCKET", &state.control_socket) };
+
+    // The panel is a separate egui client, keeping UI work outside the compositor hot path.
+    let panel_binary = std::env::current_exe()?.with_file_name("eguiwm-panel");
+    if panel_binary.is_file() {
+        std::process::Command::new(panel_binary)
+            .env("WAYLAND_DISPLAY", &state.socket_name)
+            .env("EGUIWM_CONTROL_SOCKET", &state.control_socket)
+            .spawn()?;
+    } else {
+        eprintln!("eguiwm-panel binary not found; build both binaries with `cargo build --release --bins`");
+    }
 
     if let Some(command) = std::env::args().skip(1).collect::<Vec<_>>().windows(2)
         .find(|args| args[0] == "--command")
