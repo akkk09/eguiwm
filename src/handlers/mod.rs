@@ -4,7 +4,7 @@ mod xdg_shell;
 use crate::Eguiwm;
 
 //
- // Wl Seat
+// Wl Seat
 //
 
 use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
@@ -17,8 +17,7 @@ use smithay::wayland::output::OutputHandler;
 use smithay::wayland::pointer_constraints::PointerConstraintsHandler;
 use smithay::wayland::selection::SelectionHandler;
 use smithay::wayland::selection::data_device::{
-    ClientDndGrabHandler, DataDeviceHandler, DataDeviceState, ServerDndGrabHandler,
-    WaylandDndGrabHandler, set_data_device_focus,
+    DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler, set_data_device_focus,
 };
 
 impl SeatHandler for Eguiwm {
@@ -47,14 +46,12 @@ impl SelectionHandler for Eguiwm {
 }
 
 impl DataDeviceHandler for Eguiwm {
-    fn data_device_state(&self) -> &DataDeviceState {
-        &self.data_device_state
+    fn data_device_state(&mut self) -> &mut DataDeviceState {
+        &mut self.data_device_state
     }
 }
 
 impl DndGrabHandler for Eguiwm {}
-impl ClientDndGrabHandler for Eguiwm {}
-impl ServerDndGrabHandler for Eguiwm {}
 
 impl WaylandDndGrabHandler for Eguiwm {
     fn dnd_requested<S: Source>(
