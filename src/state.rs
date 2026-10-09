@@ -96,8 +96,10 @@ impl Eguiwm {
             .unwrap_or_else(std::env::temp_dir);
         let control_socket = runtime_dir.join(format!("eguiwm-control-{}.sock", std::process::id()));
         let _ = std::fs::remove_file(&control_socket);
-        let control_listener = UnixListener::bind(&control_socket)?;
-        control_listener.set_nonblocking(true)?;
+        let control_listener = UnixListener::bind(&control_socket)
+            .expect("failed to create eguiwm control socket");
+        control_listener.set_nonblocking(true)
+            .expect("failed to make eguiwm control socket nonblocking");
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
